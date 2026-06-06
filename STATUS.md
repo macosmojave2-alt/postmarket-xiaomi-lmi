@@ -1,6 +1,6 @@
 # Proyecto: Portar postmarketOS a Xiaomi POCO F2 Pro (xiaomi-lmi)
 
-**Última actualización:** 31 de mayo de 2026
+**Última actualización:** 6 de junio de 2026
 **Dispositivo:** Xiaomi POCO F2 Pro / Redmi K30 Pro
 **SoC:** Qualcomm SM8250 (Snapdragon 865)
 **Arquitectura:** aarch64
@@ -9,16 +9,39 @@
 
 ---
 
+## 0. ESTADO ACTUAL / PRÓXIMO PASO
+
+⏳ **BLOQUEADO esperando desbloqueo de bootloader (Xiaomi Mi Unlock).**
+
+- Al 6 jun 2026 el teléfono indica **~217 horas restantes** (~9 días) → habilitado **~15 jun 2026**.
+- `fastboot` ya detecta el dispositivo correctamente; `fastboot getvar unlocked` → `unlocked: no` (esperado).
+- **Mientras tanto NO tocar la cuenta Mi ni hacer factory reset** (reinicia el contador).
+
+▶️ **Próxima acción real:** cuando el contador llegue a 0, seguir
+`GUIA-DESBLOQUEO-Y-FLASHEO.md` (Fase 1 → desbloqueo → Fase 3 → flasheo → Fase 5 → verificar modem).
+
+> Las imágenes ya están recompiladas con el modem habilitado (ver §1). El día del
+> flasheo solo hay que correr `pmbootstrap export` de nuevo (regenera symlinks en
+> /tmp, que se borra al reiniciar la laptop) — NO hay que recompilar.
+
+---
+
 ## 1. Resumen Ejecutivo
 
-**TODO EL SOFTWARE ESTÁ COMPILADO.** Se generó imagen del sistema y boot image. El port está listo para flasheo y prueba en dispositivo.
+**TODO EL SOFTWARE ESTÁ COMPILADO Y VERIFICADO** (última build: 6 jun 2026, 11:03).
+Imágenes en `/tmp/postmarketOS-export/` listas para flashear.
 
-> ⚠️ **Nota de hardware:** que el software compile no significa que todo el hardware
-> funcione. En mainline, este dispositivo tiene **modem (llamadas/SMS/datos),
-> GPS, proximidad y haptics ROTOS** (límite de mainline, no del empaquetado: el
-> SDX55m no está soportado). Funcionan pantalla, GPU, WiFi, BT, audio, táctil,
-> batería, sensores y cámara parcial. **No es usable como teléfono primario.**
-> Detalle completo en `device/testing/device-xiaomi-lmi/README.md`.
+> ✅ **Modem SDX55 HABILITADO** (corrige la nota antigua que decía "sin soporte").
+> Investigación confirmó que el SDX55 es un modem externo PCIe soportado en mainline
+> desde Linux 5.13 (driver `mhi_pci_generic`, autodetección por PCI ID 17cb:0306).
+> Faltaba habilitar el bus PCIe en el devicetree → patch aplicado y **verificado en
+> el dtb compilado** (`pcie@1c08000` y `phy@1c0e000` = status okay).
+>
+> **Estado del hardware:**
+> - ✅ Funciona: pantalla, GPU, WiFi, BT, audio, táctil, batería, sensores, cámara parcial.
+> - 🧪 Por probar en HW: modem (datos probable; voz/VoLTE experimental).
+> - ❌ Roto en mainline: GPS, proximidad, haptics.
+> - Detalle: `device/testing/device-xiaomi-lmi/README.md`.
 
 ---
 
