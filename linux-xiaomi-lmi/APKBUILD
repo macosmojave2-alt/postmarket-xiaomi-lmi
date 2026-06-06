@@ -1,0 +1,61 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/lmi_defconfig
+
+pkgname=linux-xiaomi-lmi
+pkgver=6.16.0
+pkgrel=0
+pkgdesc="Xiaomi Redmi K30 Pro kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="xiaomi-lmi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	xz
+	linux-headers
+	python3
+"
+
+# Source
+_repository="linux"
+_commit="d5c85340ff071ddac67a2d12a04b9b6c16a90d7d"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/NekoSekaiMoe/$_repository/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0
+	. downstreamkernel_prepare
+}
+
+build() {
+	unset LDFLAGS
+	make -j$(nproc) O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+	make dtbs_install modules_install CC="${CC:-gcc}" O="$_outdir" ARCH="$_carch" \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs INSTALL_MOD_PATH="$pkgdir"
+}
+
+sha512sums="
+df335d68cba7c5cb24bd964275ad9cf693334e738805f8cde68e64256a5407c8b947ae599440df80e05a074e9397f175901ba295be1683e59f2b4b0e9d032d50  linux-xiaomi-lmi-d5c85340ff071ddac67a2d12a04b9b6c16a90d7d.tar.gz
+6a3edf983e2a482a35a91298e616ab83f63199f38dd9c5f0fe7c59bbf281df065b52d51ca4db6d1fe0fcf9c2084adfa769b9e019423432056e498efe3810820c  config-xiaomi-lmi.aarch64
+"

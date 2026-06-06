@@ -1,0 +1,15 @@
+# Firmware propietario de Xiaomi — NO se versiona (ver README)
+firmware-xiaomi-lmi-Tag.zip
+*.zip
+
+# Artefactos de build
+*.apk
+*.img
+*.tar.gz
+*.o
+*.ko
+
+# Temporales
+*.swp
+*~
+.DS_Store
