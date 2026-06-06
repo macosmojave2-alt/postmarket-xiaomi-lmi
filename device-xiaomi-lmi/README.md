@@ -16,29 +16,56 @@ Fuente: [wiki postmarketOS](https://wiki.postmarketos.org/wiki/Xiaomi_POCO_F2_Pr
 - Sensores: acelerómetro, magnetómetro, luz ambiental (vía hexagonrpcd/SDSP)
 - Cámara: **parcial**
 
-### NO funciona (limitaciones de mainline, no del empaquetado)
-- **Modem: llamadas, SMS y datos móviles ROTOS.** El SDX55m no tiene soporte en mainline.
+### En progreso / experimental
+- **Modem (SDX55 5G): habilitación en curso** — ver sección "Modem" más abajo.
+
+### NO funciona
 - **GPS: roto.**
 - **Proximidad: roto.**
 - **Haptics (vibración): roto.**
 
-> ⚠️ Aunque todos los paquetes compilan y la imagen bootea, este dispositivo **no sirve como teléfono primario**: sin modem no hay red móvil. Es un port funcional para escritorio/WiFi.
+## Modem (SDX55 — EN PRUEBAS)
+
+El POCO F2 Pro usa un módem externo **Qualcomm SDX55** conectado por **PCIe bus 1**
+(no integrado en el SoC). A diferencia de lo que indicaba el wiki, mainline **sí
+soporta** este módem:
+
+- El driver `mhi_pci_generic` autodetecta el SDX55 por su PCI ID `17cb:0306`.
+- Todos los drivers necesarios ya están en el kernel: `MHI_BUS`,
+  `MHI_BUS_PCI_GENERIC`, `MHI_NET`, `QCOM_IPA`, `QRTR_MHI`, `WWAN`.
+- El firmware operativo (`mpss`) reside en la flash interna del propio SDX55,
+  por lo que **no** hace falta empaquetar blobs de modem en el host.
+
+**Lo que faltaba:** el devicetree del lmi no habilitaba el bus PCIe del módem.
+El patch `0001-sm8250-xiaomi-lmi-enable-sdx55-modem.patch` (en el paquete del
+kernel) habilita `&pcie1` + `&pcie1_phy`.
+
+### Cómo probar tras flashear
+
+```sh
+# 1. ¿Aparece el dispositivo PCIe del modem? (vendor 17cb, device 0306)
+lspci | grep -i 17cb
+dmesg | grep -iE "mhi|pci.*17cb|qcom-sdx55"
+
+# 2. ¿Lo ve ModemManager?
+mmcli -L
+mmcli -m 0          # detalles del modem
+
+# 3. Datos móviles (ajustar APN del operador):
+mmcli -m 0 --enable
+nmcli c add type gsm ifname '*' con-name internet apn TU_APN
+```
+
+> **Estado esperado:** detección del modem y datos móviles son lo más probable.
+> **Llamadas/SMS (voz)** requieren VoLTE y aún son experimentales en Linux móvil
+> incluso con el módem detectado — no garantizadas.
+> El SDX55 además requiere [FCC unlock](https://modemmanager.org/docs/modemmanager/fcc-unlock/)
+> en algunos operadores.
 
 ## Firmware
 
 - Blobs QCOM (adsp, cdsp, slpi, venus, a650_zap, ipa_fws) + sensores: paquete `firmware-xiaomi-lmi`.
-- Cirrus Logic (audio) y Focaltech (táctil): extraídos de `firmware-xiaomi-lmi-Tag.zip`.
-
-> ⚠️ **`firmware-xiaomi-lmi-Tag.zip` NO está versionado en este repositorio** (es
-> firmware propietario de Xiaomi, ~28 MB; excluido vía `.gitignore`). Para compilar
-> el paquete debes colocarlo manualmente en este directorio como
-> `device-xiaomi-lmi/firmware-xiaomi-lmi-Tag.zip`.
->
-> sha512 esperado:
-> `159939d72d5ac22b9e81e3d1dba8bfb937eb563622feaf961b5cea5a23bb4eb96923a0d395c17f87643ea8fd15041046e6bf229f5265206d767d4fd1653486bf`
->
-> Tras colocarlo: `pmbootstrap checksum device-xiaomi-lmi`. (Para el MR a pmaports,
-> este zip se convertirá en un `source` remoto con URL fija en vez de archivo local.)
+- Cirrus Logic (audio) y Focaltech (táctil): extraídos de `firmware-xiaomi-lmi-Tag.zip` (incluido en el árbol).
 
 ## Flasheo
 
