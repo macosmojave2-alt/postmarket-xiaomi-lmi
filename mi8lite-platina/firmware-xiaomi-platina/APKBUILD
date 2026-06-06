@@ -1,0 +1,54 @@
+# Maintainer: macosmojave2 <macosmojave2@gmail.com>
+pkgname=firmware-xiaomi-platina
+pkgver=1
+pkgrel=0
+pkgdesc="WiFi (WCN3990) firmware for Xiaomi Mi 8 Lite"
+url="https://postmarketos.org"
+arch="aarch64"
+license="proprietary"
+options="!strip !check !archcheck !spdx !tracedeps pmb:cross-native"
+makedepends="qca-swiss-army-knife python3"
+
+# Firmware propietario extraído de la partición modem del propio dispositivo
+# (/vendor/firmware_mnt/image/). NO se versiona; el usuario lo provee localmente.
+# Coloca aquí: bdwlan.* y wlanmdsp.mbn extraídos del Mi 8 Lite.
+source="
+	gen-board-2.py
+	$pkgname-bdwlan.tar.gz
+"
+builddir="$srcdir"
+
+_fwdir="/lib/firmware/ath10k/WCN3990/hw1.0"
+
+build() {
+	cd "$srcdir"
+
+	# 1. firmware-5.bin genérico del WCN3990 (no es propietario; se genera)
+	ath10k-fwencoder --create \
+		--features=wowlan,no-nwifi-decap-4addr-padding,allows-mesh-bcast,mgmt-tx-by-ref,non-bmi,single-chan-info-per-channel \
+		--set-wmi-op-version=tlv --set-htt-op-version=tlv \
+		--set-fw-api=5
+
+	# 2. board-2.bin a partir de los bdwlan.* del dispositivo.
+	#    ath10k-bdencoder resuelve el campo "data" del JSON relativo a su CWD,
+	#    así que se ejecuta dentro del directorio que contiene los bdwlan.*
+	python3 gen-board-2.py "$srcdir/bdwlan" "$srcdir/bdwlan/board-2.json"
+	cd "$srcdir/bdwlan"
+	ath10k-bdencoder -c board-2.json -o "$srcdir/board-2.bin"
+	cd "$srcdir"
+}
+
+package() {
+	# Firmware WiFi en la ruta que busca ath10k_snoc
+	install -Dm644 "$srcdir/firmware-5.bin" -t "$pkgdir/$_fwdir/"
+	install -Dm644 "$srcdir/board-2.bin"    -t "$pkgdir/$_fwdir/"
+
+	# Firmware del subsistema WiFi (modem) requerido por el WCN3990
+	install -Dm644 "$srcdir/bdwlan/wlanmdsp.mbn" \
+		"$pkgdir/lib/firmware/postmarketos/wlanmdsp.mbn"
+}
+
+sha512sums="
+d66619801784297b20d06c36e16ac2ab6d9f108b318716afa7fdf6c7a95d3e700a1a8e4e8d6c499fc5ecb7607bd0ac3c750603e7b7b63e114498c7ea8d1126f7  gen-board-2.py
+3a2ba7cdeafff5b0c0336397b80b3f7890a600fe81be3b638e4ced6e539ab2bcdc7875c0ccafed43c2f86d262e2999837e0b5c494ef35c79cc2803750be89f10  firmware-xiaomi-platina-bdwlan.tar.gz
+"
