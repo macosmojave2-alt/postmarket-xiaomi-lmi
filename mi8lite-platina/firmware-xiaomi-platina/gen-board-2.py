@@ -32,22 +32,28 @@ def main():
         ext = fname.split(".", 1)[1]  # p.ej. "b33", "109", "bin"
 
         # ath10k construye el nombre del board file con el qmi-board-id en
-        # HEXADECIMAL sin prefijo (kernel: "bus=%s,qmi-board-id=%x"), y la
-        # extensión del bdwlan YA es ese valor en hex. Por tanto se usa la
-        # extensión tal cual, sin convertir a decimal.
+        # HEXADECIMAL sin prefijo (kernel: "bus=%s,qmi-board-id=%x").
+        # En las extensiones tipo "bXX" la "b" inicial es un prefijo de tipo,
+        # NO parte del board-id: bdwlan.b33 -> qmi-board-id=33 (verificado
+        # contra el board-2.bin de lavender, mismo WCN3990+SDM660, que usa
+        # 33/34/.../102/ff). Las extensiones tipo "1XX" se usan tal cual.
         if ext == "bin":
             # Board file por defecto. El WCN3990 del platina reporta
             # qmi-board-id=ff cuando su OTP no tiene board-id programado,
             # así que el default cubre ese valor además del genérico.
             names = ["bus=snoc", "bus=snoc,qmi-board-id=ff"]
         else:
-            # Validar que la extensión es hex (b33, 102, ...) y usarla literal.
+            # "bXX" -> board-id "XX"; otras (102, ...) -> tal cual.
+            if ext.startswith("b") and len(ext) == 3:
+                board_id = ext[1:]
+            else:
+                board_id = ext
             try:
-                int(ext, 16)
+                int(board_id, 16)
             except ValueError:
                 print(f"  ⚠️  ignorado (extensión desconocida): {fname}", file=sys.stderr)
                 continue
-            names = [f"bus=snoc,qmi-board-id={ext}"]
+            names = [f"bus=snoc,qmi-board-id={board_id}"]
 
         entries.append({"names": names, "data": fname})
 

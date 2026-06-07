@@ -1,7 +1,7 @@
 # Maintainer: macosmojave2 <macosmojave2@gmail.com>
 pkgname=firmware-xiaomi-platina
 pkgver=1
-pkgrel=3
+pkgrel=4
 pkgdesc="WiFi (WCN3990) + modem (MSS) firmware for Xiaomi Mi 8 Lite"
 url="https://postmarketos.org"
 arch="aarch64"
@@ -58,7 +58,7 @@ package() {
 }
 
 sha512sums="
-7c6cc802265e206d37e69c6f9d8a96d25f84a0bb9e0b876c1d029a7efe7fa366dfd2dd01ff4bc4d11ee19ef5d139f5970eadc8eb9328d39eccb1734534a04d4d  gen-board-2.py
+75c44f58a2f377cdc800cf7f2fa207bcc6fe6dce7ee91cc584932dd8a918b99c58cdf286c888fc2db5c00ffd1f28068cf9e52444511ea81677d5b78525167787  gen-board-2.py
 3a2ba7cdeafff5b0c0336397b80b3f7890a600fe81be3b638e4ced6e539ab2bcdc7875c0ccafed43c2f86d262e2999837e0b5c494ef35c79cc2803750be89f10  firmware-xiaomi-platina-bdwlan.tar.gz
 685500608fc64dd90b542f59c7705b7d5927efad618faeb185e4567725e851062d94b58deafa4604a844d8891ebfe18aa48a2977d5451dd6bf821786907fdba0  firmware-xiaomi-platina-modem.tar.gz
 "
