@@ -2,11 +2,14 @@
 pkgname=device-xiaomi-platina
 pkgdesc="Xiaomi Mi 8 Lite"
 pkgver=4
-pkgrel=1
+pkgrel=3
 url="https://postmarketos.org"
 license="MIT"
 arch="aarch64"
 options="!check !archcheck"
+# soc-qcom-sdm660-rproc aporta rmtfs/tqftpserv: necesarios para que el modem
+# (MSS) y el WiFi (WCN3990) carguen su firmware. El kernel pkgrel>=2 incluye el
+# patch que habilita los nodos &wifi y &remoteproc_mss en el devicetree.
 depends="
 	linux-postmarketos-qcom-sdm660
 	mkbootimg
