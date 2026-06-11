@@ -40,8 +40,11 @@ def main():
         if ext == "bin":
             # Board file por defecto. El WCN3990 del platina reporta
             # qmi-board-id=ff cuando su OTP no tiene board-id programado,
-            # así que el default cubre ese valor además del genérico.
-            names = ["bus=snoc", "bus=snoc,qmi-board-id=ff"]
+            # o qmi-board-id=0 cuando el EFS/calibración no está disponible
+            # (modem estable pero sin board-id provisto). El default cubre
+            # ambos valores además del genérico.
+            names = ["bus=snoc", "bus=snoc,qmi-board-id=ff",
+                     "bus=snoc,qmi-board-id=0"]
         else:
             # "bXX" -> board-id "XX"; otras (102, ...) -> tal cual.
             if ext.startswith("b") and len(ext) == 3:

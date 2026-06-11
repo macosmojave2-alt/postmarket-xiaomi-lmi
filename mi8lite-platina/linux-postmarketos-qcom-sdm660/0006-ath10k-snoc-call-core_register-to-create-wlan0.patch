@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: debug <debug@debug.local>
+Date: Mon, 9 Jun 2026 00:30:00 -0500
+Subject: [PATCH 6/6] ath10k: snoc: call ath10k_core_register to create wlan0
+
+ath10k_snoc_probe() completes successfully but never calls
+ath10k_core_register(), which is required to probe the firmware,
+register the wireless PHY, and create the wlan0 interface.
+
+Without this call, the probe returns success but no network interface
+is created. PCI does this in ath10k_pci_probe() at pci.c:3704.
+
+Signed-off-by: debug <debug@debug.local>
+---
+ drivers/net/wireless/ath/ath10k/snoc.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath10k/snoc.c b/drivers/net/wireless/ath/ath10k/snoc.c
+index abcdef0..1234567 100644
+--- a/drivers/net/wireless/ath/ath10k/snoc.c
++++ b/drivers/net/wireless/ath/ath10k/snoc.c
+@@ -1850,6 +1850,20 @@
+ 	}
+ 	dev_info(dev, "  modem_init OK\n");
+ 
++	{
++		struct ath10k_bus_params bus_params = {};
++
++		bus_params.dev_type = ATH10K_DEV_TYPE_LL;
++		bus_params.chip_id = 0;
++		bus_params.link_can_suspend = false;
++
++		ret = ath10k_core_register(ar, &bus_params);
++		if (ret) {
++			ath10k_err(ar, "failed to register driver core: %d\n", ret);
++			goto err_qmi_deinit;
++		}
++	}
++
+ 	ath10k_dbg(ar, ATH10K_DBG_SNOC, "snoc probe\n");
+ 	dev_info(dev, "<<< ath10k_snoc_probe SUCCESS\n");
+ 

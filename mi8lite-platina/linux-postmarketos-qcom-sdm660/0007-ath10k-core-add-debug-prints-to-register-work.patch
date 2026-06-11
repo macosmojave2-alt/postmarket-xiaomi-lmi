@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: debug <debug@debug.local>
+Date: Mon, 9 Jun 2026 01:00:00 -0500
+Subject: [PATCH 7/7] ath10k: core: add debug prints to register and
+ register_work
+
+Add dev_info prints to ath10k_core_register() and
+ath10k_core_register_work() to trace whether the workqueue is
+being scheduled and executed.
+
+Signed-off-by: debug <debug@debug.local>
+---
+ drivers/net/wireless/ath/ath10k/core.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath10k/core.c b/drivers/net/wireless/ath/ath10k/core.c
+index abcdef0..1234567 100644
+--- a/drivers/net/wireless/ath/ath10k/core.c
++++ b/drivers/net/wireless/ath/ath10k/core.c
+@@ -3510,6 +3510,8 @@
+ 	struct ath10k *ar = container_of(work, struct ath10k, register_work);
+ 	int status;
+ 
++	dev_info(ar->dev, ">>> ath10k_core_register_work ENTER\n");
++
+ 	/* peer stats are enabled by default */
+ 	set_bit(ATH10K_FLAG_PEER_STATS, &ar->dev_flags);
+ 
+@@ -3584,6 +3586,7 @@
+ {
+ 	ar->bus_param = *bus_params;
+ 
++	dev_info(ar->dev, ">>> ath10k_core_register: queueing work\n");
+ 	queue_work(ar->workqueue, &ar->register_work);
+ 
+ 	return 0;

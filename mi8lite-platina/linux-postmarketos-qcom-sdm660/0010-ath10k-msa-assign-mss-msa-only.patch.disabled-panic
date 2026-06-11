@@ -1,0 +1,64 @@
+From: postmarketOS platina port <macosmojave2@gmail.com>
+Subject: [PATCH] ath10k: snoc: assign MSA only to MSS_MSA vmid on SDM660
+
+On the SDM660 (Xiaomi Mi 8 Lite / platina) the TrustZone (qseecom, scm-msm8998)
+rejects the QCOM_SCM_MP_ASSIGN call that ath10k issues to hand the WLAN MSA
+region to the QCOM_SCM_VMID_WLAN (0x18) and QCOM_SCM_VMID_WLAN_CE (0x19) vmids,
+returning -EINVAL ("failed to assign msa map permissions: -22"). That aborts
+ath10k_qmi_event_server_arrive() before the capability exchange, so chip_id
+stays 0, the board file is never selected and the BDF download is rejected with
+QMI error 90.
+
+The MSS_MSA vmid (0xF) is accepted by this TrustZone (it is the vmid used for
+the rmtfs_mem region, which works). Assign the MSA region only to MSS_MSA so the
+SCM call succeeds and the firmware gets a properly reassigned MSA region,
+instead of skipping the reassignment entirely (qcom,msa-fixed-perm).
+
+--- a/drivers/net/wireless/ath/ath10k/qmi.c
++++ b/drivers/net/wireless/ath/ath10k/qmi.c
+@@ -32,7 +32,7 @@
+ static int ath10k_qmi_map_msa_permission(struct ath10k_qmi *qmi,
+ 					 struct ath10k_msa_mem_info *mem_info)
+ {
+-	struct qcom_scm_vmperm dst_perms[3];
++	struct qcom_scm_vmperm dst_perms[1];
+ 	struct ath10k *ar = qmi->ar;
+ 	u64 src_perms;
+ 	u32 perm_count;
+@@ -40,18 +40,14 @@
+ 
+ 	src_perms = BIT(QCOM_SCM_VMID_HLOS);
+ 
++	/*
++	 * The SDM660 TrustZone only accepts the MSS_MSA vmid for the MSA
++	 * reassignment; the WLAN / WLAN_CE vmids make the SCM call fail with
++	 * -EINVAL. MSS_MSA alone is enough for the WCN3990 firmware here.
++	 */
+ 	dst_perms[0].vmid = QCOM_SCM_VMID_MSS_MSA;
+ 	dst_perms[0].perm = QCOM_SCM_PERM_RW;
+-	dst_perms[1].vmid = QCOM_SCM_VMID_WLAN;
+-	dst_perms[1].perm = QCOM_SCM_PERM_RW;
+-
+-	if (mem_info->secure) {
+-		perm_count = 2;
+-	} else {
+-		dst_perms[2].vmid = QCOM_SCM_VMID_WLAN_CE;
+-		dst_perms[2].perm = QCOM_SCM_PERM_RW;
+-		perm_count = 3;
+-	}
++	perm_count = 1;
+ 
+ 	ret = qcom_scm_assign_mem(mem_info->addr, mem_info->size,
+ 				  &src_perms, dst_perms, perm_count);
+@@ -69,10 +65,7 @@
+ 	u64 src_perms;
+ 	int ret;
+ 
+-	src_perms = BIT(QCOM_SCM_VMID_MSS_MSA) | BIT(QCOM_SCM_VMID_WLAN);
+-
+-	if (!mem_info->secure)
+-		src_perms |= BIT(QCOM_SCM_VMID_WLAN_CE);
++	src_perms = BIT(QCOM_SCM_VMID_MSS_MSA);
+ 
+ 	dst_perms.vmid = QCOM_SCM_VMID_HLOS;
+ 	dst_perms.perm = QCOM_SCM_PERM_RW;

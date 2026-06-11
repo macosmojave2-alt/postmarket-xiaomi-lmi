@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Malte Schababerle <m.schababerle@gmail.com>
+Date: Sun, 22 Mar 2026 12:48:23 +0100
+Subject: [PATCH 2/2] ath10k: force passive scan on 5GHz for WCN3990
+
+WCN3990 firmware (WLAN.HL.3.2) has a bug where active scan does not
+tune the radio on 5GHz non-DFS channels. The radio reports identical
+rx_clear_count values across channels, indicating no RF tuning occurs.
+As a result, no 5GHz networks are discovered during active scan.
+
+Passive scan works correctly on all 5GHz channels: the radio tunes
+properly and rx_clear_count varies as expected.
+
+Force passive scan mode for all 5GHz channels on WCN3990 using
+QCA_REV_WCN3990(). DFS channels are already passive, so the effective
+change is for non-5GHz non-DFS channels only. This follows the pattern
+established for WCN3990 firmware workarounds in thermal.c.
+
+Tested on OnePlus 7T (SM8150) with WLAN.HL.3.2.0.c2-00006:
+- 5GHz passive scan discovers APs reliably (e.g. ch116/5580 MHz)
+- Association to 5GHz networks succeeds
+- No change to 2.4GHz or DFS channel behavior
+
+Signed-off-by: Malte Schababerle <m.schababerle@gmail.com>
+---
+ drivers/net/wireless/ath/ath10k/mac.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath10k/mac.c b/drivers/net/wireless/ath/ath10k/mac.c
+index 123456789abc..def012345678 100644
+--- a/drivers/net/wireless/ath/ath10k/mac.c
++++ b/drivers/net/wireless/ath/ath10k/mac.c
+@@ -3441,6 +3441,14 @@ static int ath10k_update_channel_list(struct ath10k *ar)
+ 			passive = channel->flags & IEEE80211_CHAN_NO_IR;
+ 			ch->passive = passive;
+ 
++			/* Force passive scan on 5GHz to work around WCN3990
++			 * firmware bug where active scan doesn't tune the
++			 * radio on 5GHz non-DFS channels. The radio reports
++			 * identical rx_clear_count across channels.
++			 */
++			if (QCA_REV_WCN3990(ar) && band == NL80211_BAND_5GHZ)
++				ch->passive = true;
++
+ 			/* the firmware is ignoring the "radar" flag of the
+ 			 * channel and is scanning actively using Probe Requests
+ 			 * on "Radar detection"/DFS channels which are not
+-- 
+2.47.3
+

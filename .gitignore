@@ -14,3 +14,9 @@ firmware-xiaomi-lmi-Tag.zip
 *~
 .DS_Store
 firmware-xiaomi-platina-bdwlan.tar.gz
+
+# Árboles fuente externos clonados (kernel/qcacld downstream) — NO se versionan
+# (son repos de terceros con su propia historia git; se clonan aparte)
+qcacld3-sdm660/
+android_kernel_*/
+linux-*-sdm660-src/

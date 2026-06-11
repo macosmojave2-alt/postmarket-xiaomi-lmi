@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: arch <arch@localhost>
+Date: Sun, 8 Jun 2026 00:00:00 +0000
+Subject: [PATCH 8/8] arm64: dts: qcom: platina: add qcom,msm-id for modem
+ stability
+
+Add qcom,msm-id property to the Xiaomi Mi 8 Lite (platina) device tree.
+This property is read by the MPSS (modem) firmware during boot to validate
+the platform. Without it, the modem firmware crashes every ~40 seconds
+with "fatal error without message".
+
+The msm-id value 317 (0x13d) corresponds to the SDM660 SoC, as defined
+in the Android kernel source for this platform (MiCode/Xiaomi_Kernel_OpenSource,
+platina-o-oss branch).
+
+This fix is essential for WiFi to work, since the WCN3990 WiFi chip runs
+as a protection domain inside the MPSS subsystem. A stable modem is a
+prerequisite for WiFi functionality.
+
+Signed-off-by: arch <arch@localhost>
+---
+ arch/arm64/boot/dts/qcom/sdm660-xiaomi-platina.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sdm660-xiaomi-platina.dts b/arch/arm64/boot/dts/qcom/sdm660-xiaomi-platina.dts
+index xxxxxxx..xxxxxxx 100644
+--- a/arch/arm64/boot/dts/qcom/sdm660-xiaomi-platina.dts
++++ b/arch/arm64/boot/dts/qcom/sdm660-xiaomi-platina.dts
+@@ -19,6 +19,7 @@
+ / {
+ 	model = "Xiaomi Mi 8 Lite";
+ 	compatible = "xiaomi,platina", "qcom,sdm660";
++	qcom,msm-id = <317 0x0>;
+ 	chassis-type = "handset";
+ 
+ 	aliases {
+-- 
+2.x.x
+

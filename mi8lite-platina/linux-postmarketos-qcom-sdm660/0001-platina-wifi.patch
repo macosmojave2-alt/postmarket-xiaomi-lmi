@@ -6,11 +6,11 @@
  };
 +
 +/*
-+ * Enable Wi-Fi/Bluetooth (Qualcomm WCN3990) and the modem (MSS) remoteproc.
-+ * The WCN3990 (ath10k_snoc) requires the modem subsystem alive to load its
-+ * firmware. Both nodes exist in sdm630.dtsi but are disabled by default;
-+ * here they are enabled with the device-specific regulator supplies, mirroring
-+ * the working configuration of the SDM660 reference device (xiaomi-lavender).
++ * Enable Wi-Fi (Qualcomm WCN3990) and the modem (MSS) remoteproc. The WCN3990
++ * (ath10k_snoc) needs the modem subsystem alive to load its firmware. Both
++ * nodes exist in sdm630.dtsi but are disabled by default. The MSA SCM
++ * reassignment is fixed for this SoC by patch 0010 (assign only to MSS_MSA),
++ * so no qcom,msa-fixed-perm is needed here.
 + */
 +&remoteproc_mss {
 +	firmware-name = "postmarketos/mba.mbn", "postmarketos/modem.mdt";

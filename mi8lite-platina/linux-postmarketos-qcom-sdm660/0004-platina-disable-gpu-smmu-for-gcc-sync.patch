@@ -1,0 +1,16 @@
+--- a/arch/arm64/boot/dts/qcom/sdm660-xiaomi-platina.dts
++++ b/arch/arm64/boot/dts/qcom/sdm660-xiaomi-platina.dts
+@@ -276,6 +276,13 @@
+ &mmcc {
+ 	status = "disabled";
+ };
++
++/* The GPU SMMU depends on &gpucc (disabled). Disable it to allow
++ * gcc-sdm660 to complete sync_state() and configure downstream clocks.
++ */
++&kgsl_smmu {
++	status = "disabled";
++};
+
+ &pm660_gpios {
+ 	nfc_clk_req_n: nfc-clkreq-n-state {

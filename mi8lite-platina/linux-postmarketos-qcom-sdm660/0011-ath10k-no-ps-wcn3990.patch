@@ -1,0 +1,37 @@
+From: postmarketOS platina port <macosmojave2@gmail.com>
+Subject: [PATCH] ath10k: do not advertise power save on WCN3990 (SDM660)
+
+On the Xiaomi Mi 8 Lite (platina, SDM660) the WCN3990 WLAN firmware
+(WLAN.HL.1.0.1.c6), which runs inside the modem subsystem, crashes
+(EX:wlan_process, PC=b00c75b8) the instant it receives the WMI set_psmode
+command. mac80211 sends that command during vdev setup whenever the driver
+advertises SUPPORTS_PS. The crash takes down the MSS remoteproc and aborts any
+operation (e.g. the very first scan never runs).
+
+A clean-boot WMI trace shows set_psmode is the sole trigger: every QMI/board/BDF
+step succeeds, the firmware is ready, and the crash happens exactly at
+"wmi tlv set psmode", before "wmi tlv start scan".
+
+Do not advertise PS for WCN3990 so mac80211 never issues set_psmode, keeping the
+device operational. Power save is a power-optimisation, not required for
+functional WiFi.
+
+--- a/drivers/net/wireless/ath/ath10k/mac.c
++++ b/drivers/net/wireless/ath/ath10k/mac.c
+@@ -10064,7 +10064,15 @@
+ 
+ 	ieee80211_hw_set(ar->hw, SIGNAL_DBM);
+ 
+-	if (!test_bit(ATH10K_FW_FEATURE_NO_PS,
++	/*
++	 * The WCN3990 WLAN firmware (WLAN.HL.1.0.1.c6) running inside the modem
++	 * on the SDM660 crashes (EX:wlan_process, PC=b00c75b8) the moment it
++	 * receives the WMI set_psmode command that mac80211 triggers when power
++	 * save is advertised. Do not advertise PS for WCN3990 so mac80211 never
++	 * sends set_psmode; this keeps the device operational (scan/connect).
++	 */
++	if (!QCA_REV_WCN3990(ar) &&
++	    !test_bit(ATH10K_FW_FEATURE_NO_PS,
+ 		      ar->running_fw->fw_file.fw_features)) {
+ 		ieee80211_hw_set(ar->hw, SUPPORTS_PS);
+ 		ieee80211_hw_set(ar->hw, SUPPORTS_DYNAMIC_PS);

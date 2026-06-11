@@ -1,0 +1,131 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: debug <debug@debug.local>
+Date: Sun, 8 Jun 2026 22:50:00 -0500
+Subject: [PATCH 5/5] ath10k: snoc: add dev_info probe debug prints
+
+Add visible debug prints to ath10k_snoc_probe() to confirm whether
+probe() is called and where it fails. Uses dev_info (not ath10k_dbg)
+so prints appear unconditionally in dmesg.
+
+Signed-off-by: debug <debug@debug.local>
+---
+ drivers/net/wireless/ath/ath10k/snoc.c | 64 +++++++++++++++++++++++++
+ 1 file changed, 64 insertions(+)
+--- a/drivers/net/wireless/ath/ath10k/snoc.c
++++ b/drivers/net/wireless/ath/ath10k/snoc.c
+@@ -1724,6 +1724,7 @@
+ 	u32 i;
+ 
+ 	dev = &pdev->dev;
++	dev_info(dev, ">>> ath10k_snoc_probe ENTER\n");
+ 	drv_data = device_get_match_data(dev);
+ 	if (!drv_data) {
+ 		dev_err(dev, "failed to find matching device tree id\n");
+@@ -1733,15 +1734,19 @@
+ 	ret = dma_set_mask_and_coherent(dev, drv_data->dma_mask);
+ 	if (ret) {
+ 		dev_err(dev, "failed to set dma mask: %d\n", ret);
++		dev_info(dev, "<<< ath10k_snoc_probe FAIL dma_mask: %d\n", ret);
+ 		return ret;
+ 	}
++	dev_info(dev, "  dma_mask OK\n");
+ 
+ 	ar = ath10k_core_create(sizeof(*ar_snoc), dev, ATH10K_BUS_SNOC,
+ 				drv_data->hw_rev, &ath10k_snoc_hif_ops);
+ 	if (!ar) {
+ 		dev_err(dev, "failed to allocate core\n");
++		dev_info(dev, "<<< ath10k_snoc_probe FAIL core_create\n");
+ 		return -ENOMEM;
+ 	}
++	dev_info(dev, "  ath10k_core_create OK\n");
+ 
+ 	ar_snoc = ath10k_snoc_priv(ar);
+ 	ar_snoc->dev = pdev;
+@@ -1756,19 +1761,26 @@
+ 	ret = ath10k_snoc_resource_init(ar);
+ 	if (ret) {
+ 		ath10k_warn(ar, "failed to initialize resource: %d\n", ret);
++		dev_info(dev, "<<< ath10k_snoc_probe FAIL resource_init: %d\n", ret);
+ 		goto err_core_destroy;
+ 	}
++	dev_info(dev, "  resource_init OK\n");
+ 
+ 	ret = ath10k_snoc_setup_resource(ar);
+ 	if (ret) {
+ 		ath10k_warn(ar, "failed to setup resource: %d\n", ret);
++		dev_info(dev, "<<< ath10k_snoc_probe FAIL setup_resource: %d\n", ret);
+ 		goto err_core_destroy;
+ 	}
++	dev_info(dev, "  setup_resource OK\n");
++
+ 	ret = ath10k_snoc_request_irq(ar);
+ 	if (ret) {
+ 		ath10k_warn(ar, "failed to request irqs: %d\n", ret);
++		dev_info(dev, "<<< ath10k_snoc_probe FAIL request_irq: %d\n", ret);
+ 		goto err_release_resource;
+ 	}
++	dev_info(dev, "  request_irq OK\n");
+ 
+ 	ar_snoc->num_vregs = ARRAY_SIZE(ath10k_regulators);
+ 	ar_snoc->vregs = devm_kcalloc(&pdev->dev, ar_snoc->num_vregs,
+@@ -1782,8 +1794,11 @@
+ 
+ 	ret = devm_regulator_bulk_get(&pdev->dev, ar_snoc->num_vregs,
+ 				      ar_snoc->vregs);
+-	if (ret < 0)
++	if (ret < 0) {
++		dev_info(dev, "<<< ath10k_snoc_probe FAIL regulator_bulk_get: %d\n", ret);
+ 		goto err_free_irq;
++	}
++	dev_info(dev, "  regulator_bulk_get OK (num=%d)\n", ar_snoc->num_vregs);
+ 
+ 	ar_snoc->num_clks = ARRAY_SIZE(ath10k_clocks);
+ 	ar_snoc->clks = devm_kcalloc(&pdev->dev, ar_snoc->num_clks,
+@@ -1798,32 +1813,45 @@
+ 
+ 	ret = devm_clk_bulk_get_optional(&pdev->dev, ar_snoc->num_clks,
+ 					 ar_snoc->clks);
+-	if (ret)
++	if (ret) {
++		dev_info(dev, "<<< ath10k_snoc_probe FAIL clk_bulk_get_optional: %d\n", ret);
+ 		goto err_free_irq;
++	}
++	dev_info(dev, "  clk_bulk_get_optional OK (num=%d)\n", ar_snoc->num_clks);
+ 
+ 	ret = ath10k_setup_msa_resources(ar, msa_size);
+ 	if (ret) {
+ 		ath10k_warn(ar, "failed to setup msa resources: %d\n", ret);
++		dev_info(dev, "<<< ath10k_snoc_probe FAIL msa_resources: %d\n", ret);
+ 		goto err_free_irq;
+ 	}
++	dev_info(dev, "  msa_resources OK\n");
+ 
+ 	ret = ath10k_fw_init(ar);
+ 	if (ret) {
+ 		ath10k_err(ar, "failed to initialize firmware: %d\n", ret);
++		dev_info(dev, "<<< ath10k_snoc_probe FAIL fw_init: %d\n", ret);
+ 		goto err_free_irq;
+ 	}
++	dev_info(dev, "  fw_init OK\n");
+ 
+ 	ret = ath10k_qmi_init(ar, msa_size);
+ 	if (ret) {
+ 		ath10k_warn(ar, "failed to register wlfw qmi client: %d\n", ret);
++		dev_info(dev, "<<< ath10k_snoc_probe FAIL qmi_init: %d\n", ret);
+ 		goto err_fw_deinit;
+ 	}
++	dev_info(dev, "  qmi_init OK\n");
+ 
+ 	ret = ath10k_modem_init(ar);
+-	if (ret)
++	if (ret) {
++		dev_info(dev, "<<< ath10k_snoc_probe FAIL modem_init: %d\n", ret);
+ 		goto err_qmi_deinit;
++	}
++	dev_info(dev, "  modem_init OK\n");
+ 
+ 	ath10k_dbg(ar, ATH10K_DBG_SNOC, "snoc probe\n");
++	dev_info(dev, "<<< ath10k_snoc_probe SUCCESS\n");
+ 
+ 	return 0;
+ 

@@ -4,7 +4,7 @@
 _flavor="postmarketos-qcom-sdm660"
 pkgname=linux-$_flavor
 pkgver=6.17.4
-pkgrel=3
+pkgrel=21
 pkgdesc="Close to mainline linux kernel for Qualcomm Snapdragon 660 SoC"
 arch="aarch64"
 url="https://kernel.org/"
@@ -31,6 +31,16 @@ source="
 	linux-$_tag.tar.gz::https://github.com/sdm660-mainline/linux/archive/refs/tags/$_tag.tar.gz
 	config-$_flavor.aarch64
 	0001-platina-wifi.patch
+	0002-ath10k-skip-quiet-mode-wcn3990.patch
+	0003-ath10k-force-passive-scan-5ghz.patch
+	0004-platina-disable-gpu-smmu-for-gcc-sync.patch
+	0005-ath10k-snoc-add-debug-probe-prints.patch
+	0006-ath10k-snoc-call-core_register-to-create-wlan0.patch
+	0007-ath10k-core-add-debug-prints-to-register-work.patch
+	0008-platina-add-qcom-msm-id-for-modem-stability.patch
+	0009-sdm660-add-qcom-memshare-driver.patch
+	0011-ath10k-no-ps-wcn3990.patch
+	0012-ath10k-skip-psmode-wcn3990.patch
 "
 
 _carch="arm64"
@@ -83,6 +93,16 @@ package() {
 }
 sha512sums="
 27b33c08162ff76f29095641b3913f61f301728eb3d341be4d8e03614a136783a7ee79842154614d11c76a84a06c6f2f0014f0ffeb378f7cd760e5e6fe138a88  linux-v6.17.4-sdm660.tar.gz
-dcc2a71ec15550718572c4af0b8faf137f8e761028ef3872ad732e28f7720b6bdf216f33fbe33ca859a83f5721fe3e26bcfbccfbbdeec23a6d571f745bae7543  config-postmarketos-qcom-sdm660.aarch64
-5f6b92ec7a6070689e7c3931cf6cd6642ed69fba2749354e38ad831720130ce349594aa045b47609587079364bf0246ee87fa67f1169bc75674678a04cd68e8e  0001-platina-wifi.patch
+6b70d3352558643406280cfab450380671578240017af626f3269165ba7031cd52fb2b8cf00e5485d6e73420555b552b754ba9499ab5a716c00f6ce0e255e9d1  config-postmarketos-qcom-sdm660.aarch64
+eb95ac744ebf2fb6cee0f79a3cf8fe2e2506a45ec962ecc2ccdd28107bbc48d50f24ca6dbce8f0cdab9b80e1c4a413fc2dacdfdd1ed14d7f564e16cbfd62c84d  0001-platina-wifi.patch
+293ebb019153d482251fea52dc6f38f1e1d559cc731de0064d05bd4cfbaf3098ef2b088a9d829a53521c6b9c7b1819d05bdd27b26e2da5e2a8bb4fffe8ec644c  0002-ath10k-skip-quiet-mode-wcn3990.patch
+c3a703c246ad31b4b702bcddf7e6d7a0c9f7f31650cd219660ba306a05b91d2613d10ff38c68496e5c7a2faadc1c8207743650dbfe919067b5f777e0764f6b48  0003-ath10k-force-passive-scan-5ghz.patch
+0d9de0b929a5fa092cf46c3078eb229ce8dd054df68bd818d0601d4e99a5e7b4a723d2e978bdf0326127c51d3282d54c98a7d170f91cebc8471eba32fb47ef79  0004-platina-disable-gpu-smmu-for-gcc-sync.patch
+3f202200b3ac06b3454f778acbd9158c7c640d210be1bca7b697713b42e4dd0a1cee161471b6c659d0429932f9d893d8f24fcf5c205c913972f537b7da4bf6bb  0005-ath10k-snoc-add-debug-probe-prints.patch
+e0e7d6d23b0ecddfb3829a1a1ffc82529d5b7b6781151c3d002f4011b5b780d76bdf98b5a20d7f78f9f5fd35e434a7a77dbe2a506d8ce262684e5f38042d70d1  0006-ath10k-snoc-call-core_register-to-create-wlan0.patch
+838d56009b9c03a5d06385b33e0e4338c6d0d155c065f3368f29a99cf9279988e7cec070cc09b37627ebaf555752116e6f6876141c4e8a312f7e58afaa246989  0007-ath10k-core-add-debug-prints-to-register-work.patch
+a29ea4f5ed4cbd7c48575d1d8a3da2ac2c9bc496e27cbdf6d6ef06f8ee3c6bddea7d2dcda1d1251437c4854a82a92257f0e9a076a889804e25394c9ffff76814  0008-platina-add-qcom-msm-id-for-modem-stability.patch
+93477d352f047a0d7db0391a7b57b2a4c453bc7c8afb9695c9bca7a54e1e92b669411042c8d30afd56b9c30695a3e2360e34a1b7bf82ef8bd504837befb2629f  0009-sdm660-add-qcom-memshare-driver.patch
+e09614351f4ceeee68a6ab9529b11290c41c189ca2157b3963f9117aa9202156b1b6b70932c1c7fd72e76a8d36af8e9c8b1a12427a948ef8f0204d52827c09c1  0011-ath10k-no-ps-wcn3990.patch
+d810fe2eadde7629397ccb4b8f53218171443eac948a558f4f1665d2e6044e9d1a9bee0616b722506d2631e1888524894559c6df1e63aef3b05b69712c7de163  0012-ath10k-skip-psmode-wcn3990.patch
 "

@@ -1,0 +1,30 @@
+From: postmarketOS platina porting
+Subject: [PATCH] ath10k: do not send WMI set_psmode on WCN3990 (SDM660)
+
+The WCN3990 WLAN firmware (WLAN.HL.1.0.1.c6) running inside the SDM660
+modem crashes (EX:wlan_process, PC=b00c75b8) the moment it receives the
+WMI set_psmode command. ath10k_mac_vif_setup_ps() sends this command
+unconditionally during STA vif bring-up and scan (the "force-enable PS
+for non-running vdevs" path), independent of whether SUPPORTS_PS is
+advertised. Short-circuit the function for WCN3990 so the crash-
+triggering command is never sent and scan/connect can proceed.
+
+--- a/drivers/net/wireless/ath/ath10k/mac.c	2026-06-10 17:44:36.997156681 -0500
++++ b/drivers/net/wireless/ath/ath10k/mac.c	2026-06-10 17:44:37.018495038 -0500
+@@ -1952,6 +1952,16 @@
+ 
+ 	lockdep_assert_held(&arvif->ar->conf_mutex);
+ 
++	/*
++	 * The WCN3990 WLAN firmware on the SDM660 (running inside the modem
++	 * Q6) crashes with EX:wlan_process PC=b00c75b8 as soon as it receives
++	 * the WMI set_psmode command. This command is otherwise sent
++	 * unconditionally during STA vif bring-up / scan. Skip it entirely on
++	 * WCN3990 so the firmware stays alive and scan/connect can proceed.
++	 */
++	if (QCA_REV_WCN3990(ar))
++		return 0;
++
+ 	if (arvif->vif->type != NL80211_IFTYPE_STATION)
+ 		return 0;
+ 

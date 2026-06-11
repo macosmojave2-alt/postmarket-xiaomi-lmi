@@ -2,7 +2,7 @@
 pkgname=device-xiaomi-platina
 pkgdesc="Xiaomi Mi 8 Lite"
 pkgver=4
-pkgrel=3
+pkgrel=4
 url="https://postmarketos.org"
 license="MIT"
 arch="aarch64"
@@ -11,11 +11,13 @@ options="!check !archcheck"
 # (MSS) y el WiFi (WCN3990) carguen su firmware. El kernel pkgrel>=2 incluye el
 # patch que habilita los nodos &wifi y &remoteproc_mss en el devicetree.
 depends="
+	iw
 	linux-postmarketos-qcom-sdm660
 	mkbootimg
 	postmarketos-base
 	soc-qcom-sdm660
 	soc-qcom-sdm660-rproc
+	wpa_supplicant
 	"
 makedepends="devicepkg-dev"
 source="deviceinfo modules-initfs"
@@ -36,6 +38,6 @@ nonfree_firmware() {
 }
 
 sha512sums="
-c81f41698faf1f89434949072e5fb4aca2e03c1affd88528fd5e85c9ac5d54d805002a28ab14a85c39487f9212f882d98c7ec86b5c293cf4080cfc5145795c14  deviceinfo
+1b7f3d5ecedc5b78d7b1a94d509f9816c1e408ecdc9a584be6a3b50327177a5cf2844bf7146c9e169faa0f6a6e53cadee93e41d91ab4122a393340f378a3cb77  deviceinfo
 a9eac9527c9561a1f6bd80d3e68116bb6bb780b0cb7db89ddd84aaf42a1afc605fff258aaf1cb589cb003e213c29293216c7e9c06e07fcc9a11fea9ff1c3c7c9  modules-initfs
 "

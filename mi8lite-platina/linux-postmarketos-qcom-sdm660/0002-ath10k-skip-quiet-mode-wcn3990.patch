@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Malte Schababerle <m.schababerle@gmail.com>
+Date: Sun, 22 Mar 2026 12:48:22 +0100
+Subject: [PATCH 1/2] ath10k: skip quiet mode for WCN3990 to prevent
+ firmware crash
+
+WCN3990 firmware (WLAN.HL.3.2) crashes deterministically when the
+quiet mode WMI command is sent during ath10k_start(). The crash occurs
+at PC=0xb0008e20 in wlanmdsp.mbn, ~17ms after the subsequent
+vdev_create command, and cascades into a full modem crash.
+
+Commit 53884577fbcef ("ath10k: skip sending quiet mode cmd for
+WCN3990") addressed this for HL2.0 firmware by gating quiet mode on
+WMI_SERVICE_THERM_THROT. HL2.0 did not advertise the service bit, so
+the guard was effective. However, newer WCN3990 firmware (HL3.2)
+erroneously advertises WMI_SERVICE_THERM_THROT via its TLV service
+map despite still being unable to handle the quiet mode command.
+
+Skip quiet mode unconditionally for WCN3990 using QCA_REV_WCN3990()
+instead of relying on the service bit.
+
+Tested on OnePlus 7T (SM8150) with WLAN.HL.3.2.0.c2-00006 and
+WLAN.HL.3.2.0.c2-00011 (both crash without patch, both work with):
+- wlan0 comes up without crash
+- WiFi scanning works
+- NetworkManager recognizes the interface
+
+Fixes: 53884577fbcef ("ath10k: skip sending quiet mode cmd for WCN3990")
+Signed-off-by: Malte Schababerle <m.schababerle@gmail.com>
+---
+ drivers/net/wireless/ath/ath10k/thermal.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath10k/thermal.c b/drivers/net/wireless/ath/ath10k/thermal.c
+index 123456789abc..def012345678 100644
+--- a/drivers/net/wireless/ath/ath10k/thermal.c
++++ b/drivers/net/wireless/ath/ath10k/thermal.c
+@@ -136,6 +136,17 @@ void ath10k_thermal_set_throttling(struct ath10k *ar)
+ 	if (!ar->wmi.ops->gen_pdev_set_quiet_mode)
+ 		return;
+ 
++	/* WCN3990 firmware crashes on quiet mode despite advertising support.
++	 * See also commit 53884577fbcef ("ath10k: skip sending quiet mode
++	 * cmd for WCN3990"). HL3.2 erroneously advertises WMI_SERVICE_THERM_THROT
++	 * but still crashes on the quiet mode command at PC=0xb0008e20.
++	 */
++	if (QCA_REV_WCN3990(ar)) {
++		ath10k_dbg(ar, ATH10K_DBG_BOOT,
++			   "skip quiet mode for WCN3990 (known crash trigger)\n");
++		return;
++	}
++
+ 	if (ar->state != ATH10K_STATE_ON)
+ 		return;
+ 
+-- 
+2.47.3
+
